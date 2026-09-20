@@ -18,8 +18,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL 支持的真实业�
   });
   afterEach(async()=>{for(const id of owned.splice(0))await repo.delete(id);await server.app.close();await repo.close();});
   it('并发相同请求只记录一餐且每日摄入一致',async()=>{
-    const key=randomUUID();const results=await Promise.all(Array.from({length:8},()=>call('POST','/v1/meals',meal,key)));
-    expect(results.map(r=>r.statusCode)).toEqual(Array(8).fill(200));expect(new Set(results.map(r=>r.json().data.id)).size).toBe(1);
+    const key=randomUUID();const results=await Promise.all(Array.from({length:16},()=>call('POST','/v1/meals',meal,key)));
+    expect(results.map(r=>r.statusCode)).toEqual(Array(16).fill(200));expect(new Set(results.map(r=>r.json().data.id)).size).toBe(1);
     const day=(await call('GET','/v1/days/today')).json().data;expect(day.nutrition.mealCount).toBe(1);expect(day.meals).toHaveLength(1);
   });
   it('并发旧版本修正不能互相覆盖，事务异常不能部分写入',async()=>{

@@ -1,6 +1,7 @@
 import { readFile, mkdir, writeFile, rename, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { AccountState, initialState } from '../../../packages/domain/models';
 
 export interface Repository {
@@ -63,13 +64,17 @@ export class PostgresRepository implements Repository {
   constructor(private prisma: any) {}
   async read(id: string) { const row = await this.prisma.account.findUnique({ where: { id } }); return row?.state as AccountState ?? null; }
   async transact<T>(id: string, fn: (s: AccountState) => Promise<T> | T, create = false): Promise<T> {
-    for (let attempt = 0; attempt < 5; attempt++) {
+    for (let attempt = 0; attempt < 8; attempt++) {
       try {
         return await this.prisma.$transaction(async (tx: any) => {
           const row = await tx.account.findUnique({ where: { id } });
           if (!row && !create) throw new DomainError(401, 'ACCOUNT_UNAVAILABLE', '账号已删除或会话失效');
           const state = (row?.state ?? initialState()) as AccountState;
+          const before = row ? structuredClone(state) : null;
           const result = await fn(state);
+          // Replaying an idempotent response must not rewrite the account and make
+          // all other replay transactions conflict again.
+          if (row && isDeepStrictEqual(before, state)) return result;
           // Existing accounts must only UPDATE. An UPSERT could resurrect a row deleted
           // after our snapshot was read, restoring private data after account deletion.
           if(row) await tx.account.update({ where: { id }, data: { state } });
@@ -78,7 +83,10 @@ export class PostgresRepository implements Repository {
         }, { isolationLevel: 'Serializable', timeout: 10000 });
       } catch (e: any) {
         if(e.code==='P2025') throw new DomainError(401,'ACCOUNT_UNAVAILABLE','账号已删除或会话失效');
-        if (!['P2034', 'P2002'].includes(e.code) || attempt === 4) throw e;
+        if (!['P2034', 'P2002'].includes(e.code)) throw e;
+        if (attempt === 7) throw new DomainError(503,'TRANSACTION_BUSY','请求较多，请稍后重试');
+        // Bounded exponential backoff with jitter avoids synchronized retry storms.
+        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random()*Math.min(250,10*2**attempt))+1));
       }
     }
     throw new Error('Transaction retry exhausted');
