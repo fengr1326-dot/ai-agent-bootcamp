@@ -1,0 +1,220 @@
+{
+  "data": {
+    "version": "demo-foods-2026-09-v1",
+    "experimental": true,
+    "items": [
+      {
+        "id": "rice",
+        "name": "米饭",
+        "category": "grain",
+        "per100g": {
+          "energy": 130,
+          "protein": 2.7,
+          "fiber": 0.4,
+          "water": 68
+        },
+        "allergens": [],
+        "aliases": [
+          "饭",
+          "白饭"
+        ],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "chicken",
+        "name": "鸡胸肉",
+        "category": "protein",
+        "per100g": {
+          "energy": 165,
+          "protein": 31,
+          "fiber": 0,
+          "water": 65
+        },
+        "allergens": [],
+        "aliases": [
+          "鸡肉",
+          "鸡"
+        ],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "broccoli",
+        "name": "西兰花",
+        "category": "vegetable",
+        "per100g": {
+          "energy": 35,
+          "protein": 2.4,
+          "fiber": 3.3,
+          "water": 89
+        },
+        "allergens": [],
+        "aliases": [
+          "蔬菜",
+          "青菜"
+        ],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "tofu",
+        "name": "豆腐",
+        "category": "protein",
+        "per100g": {
+          "energy": 80,
+          "protein": 8,
+          "fiber": 1,
+          "water": 85
+        },
+        "allergens": [
+          "soy",
+          "大豆",
+          "豆类"
+        ],
+        "aliases": [],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "egg",
+        "name": "鸡蛋",
+        "category": "protein",
+        "per100g": {
+          "energy": 155,
+          "protein": 13,
+          "fiber": 0,
+          "water": 75
+        },
+        "allergens": [
+          "egg",
+          "鸡蛋"
+        ],
+        "aliases": [
+          "蛋"
+        ],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "oats",
+        "name": "燕麦",
+        "category": "grain",
+        "per100g": {
+          "energy": 71,
+          "protein": 2.5,
+          "fiber": 1.7,
+          "water": 84
+        },
+        "allergens": [
+          "gluten",
+          "麸质"
+        ],
+        "aliases": [
+          "燕麦粥"
+        ],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "yogurt",
+        "name": "原味酸奶",
+        "category": "dairy",
+        "per100g": {
+          "energy": 63,
+          "protein": 5.3,
+          "fiber": 0,
+          "water": 85
+        },
+        "allergens": [
+          "milk",
+          "乳",
+          "牛奶"
+        ],
+        "aliases": [
+          "酸奶"
+        ],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "apple",
+        "name": "苹果",
+        "category": "fruit",
+        "per100g": {
+          "energy": 52,
+          "protein": 0.3,
+          "fiber": 2.4,
+          "water": 86
+        },
+        "allergens": [],
+        "aliases": [],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "beef",
+        "name": "瘦牛肉",
+        "category": "protein",
+        "per100g": {
+          "energy": 200,
+          "protein": 29,
+          "fiber": 0,
+          "water": 65
+        },
+        "allergens": [],
+        "aliases": [
+          "牛肉",
+          "牛"
+        ],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "noodles",
+        "name": "面条",
+        "category": "grain",
+        "per100g": {
+          "energy": 138,
+          "protein": 4.5,
+          "fiber": 1.8,
+          "water": 65
+        },
+        "allergens": [
+          "gluten",
+          "麸质",
+          "小麦"
+        ],
+        "aliases": [
+          "面"
+        ],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "salmon",
+        "name": "三文鱼",
+        "category": "protein",
+        "per100g": {
+          "energy": 208,
+          "protein": 20,
+          "fiber": 0,
+          "water": 64
+        },
+        "allergens": [
+          "fish",
+          "鱼"
+        ],
+        "aliases": [],
+        "source": "开发参考数据，待营养数据审核"
+      },
+      {
+        "id": "water",
+        "name": "饮用水",
+        "category": "water",
+        "per100g": {
+          "energy": 0,
+          "protein": 0,
+          "fiber": 0,
+          "water": 100
+        },
+        "allergens": [],
+        "aliases": [
+          "水"
+        ],
+        "source": "开发参考数据，待营养数据审核"
+      }
+    ]
+  },
+  "requestId": "contract-fixture"
+}

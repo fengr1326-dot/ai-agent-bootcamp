@@ -1,0 +1,169 @@
+{
+  "data": {
+    "days": [
+      {
+        "date": "2026-09-11",
+        "mealCount": 0,
+        "consumed": {
+          "energy": {
+            "min": 0,
+            "max": 0
+          },
+          "protein": {
+            "min": 0,
+            "max": 0
+          },
+          "fiber": {
+            "min": 0,
+            "max": 0
+          },
+          "water": {
+            "min": 0,
+            "max": 0
+          }
+        },
+        "confidence": "low"
+      },
+      {
+        "date": "2026-09-12",
+        "mealCount": 0,
+        "consumed": {
+          "energy": {
+            "min": 0,
+            "max": 0
+          },
+          "protein": {
+            "min": 0,
+            "max": 0
+          },
+          "fiber": {
+            "min": 0,
+            "max": 0
+          },
+          "water": {
+            "min": 0,
+            "max": 0
+          }
+        },
+        "confidence": "low"
+      },
+      {
+        "date": "2026-09-13",
+        "mealCount": 0,
+        "consumed": {
+          "energy": {
+            "min": 0,
+            "max": 0
+          },
+          "protein": {
+            "min": 0,
+            "max": 0
+          },
+          "fiber": {
+            "min": 0,
+            "max": 0
+          },
+          "water": {
+            "min": 0,
+            "max": 0
+          }
+        },
+        "confidence": "low"
+      },
+      {
+        "date": "2026-09-14",
+        "mealCount": 0,
+        "consumed": {
+          "energy": {
+            "min": 0,
+            "max": 0
+          },
+          "protein": {
+            "min": 0,
+            "max": 0
+          },
+          "fiber": {
+            "min": 0,
+            "max": 0
+          },
+          "water": {
+            "min": 0,
+            "max": 0
+          }
+        },
+        "confidence": "low"
+      },
+      {
+        "date": "2026-09-15",
+        "mealCount": 0,
+        "consumed": {
+          "energy": {
+            "min": 0,
+            "max": 0
+          },
+          "protein": {
+            "min": 0,
+            "max": 0
+          },
+          "fiber": {
+            "min": 0,
+            "max": 0
+          },
+          "water": {
+            "min": 0,
+            "max": 0
+          }
+        },
+        "confidence": "low"
+      },
+      {
+        "date": "2026-09-16",
+        "mealCount": 0,
+        "consumed": {
+          "energy": {
+            "min": 0,
+            "max": 0
+          },
+          "protein": {
+            "min": 0,
+            "max": 0
+          },
+          "fiber": {
+            "min": 0,
+            "max": 0
+          },
+          "water": {
+            "min": 0,
+            "max": 0
+          }
+        },
+        "confidence": "low"
+      },
+      {
+        "date": "2026-09-17",
+        "mealCount": 1,
+        "consumed": {
+          "energy": {
+            "min": 270,
+            "max": 450
+          },
+          "protein": {
+            "min": 26.3,
+            "max": 43.8
+          },
+          "fiber": {
+            "min": 0.5,
+            "max": 0.8
+          },
+          "water": {
+            "min": 125.3,
+            "max": 208.8
+          }
+        },
+        "confidence": "medium"
+      }
+    ],
+    "message": "趋势用于理解自己的节奏，不需要补记过去。"
+  },
+  "requestId": "contract-fixture"
+}

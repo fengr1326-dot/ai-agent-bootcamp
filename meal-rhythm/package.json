@@ -1,0 +1,54 @@
+{
+  "name": "meal-rhythm",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:rules": "vitest run tests/rules.test.ts",
+    "test:api": "vitest run tests/api.test.ts",
+    "test:postgres": "tsx scripts/test-postgres.ts",
+    "start": "node dist/apps/api/src/main.js",
+    "dev": "tsx watch apps/api/src/main.ts",
+    "worker": "tsx apps/worker/src/main.ts",
+    "contracts": "tsx scripts/contracts.ts",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "verify": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0",
+    "@fastify/rate-limit": "^10.0.0",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-fastify": "^11.0.0",
+    "@prisma/client": "^6.19.0",
+    "bullmq": "^5.0.0",
+    "fastify": "5.12.1",
+    "jose": "^6.0.0",
+    "luxon": "^3.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.0",
+    "sharp": "0.35.4",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@repomix/tree-sitter-wasms": "^0.1.17",
+    "@types/luxon": "^3.0.0",
+    "@types/node": "^24.0.0",
+    "embedded-postgres": "17.10.0-beta.17",
+    "prisma": "^6.19.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "4.1.11",
+    "web-tree-sitter": "^0.25.10"
+  },
+  "overrides": {
+    "fastify": "$fastify",
+    "deepmerge-ts": "8.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

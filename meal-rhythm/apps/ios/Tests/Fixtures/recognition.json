@@ -1,0 +1,19 @@
+{
+  "data": {
+    "id": "00000000-0000-4000-8000-000000000002",
+    "status": "ready",
+    "items": [
+      {
+        "foodId": "rice",
+        "grams": 150
+      },
+      {
+        "foodId": "chicken",
+        "grams": 100
+      }
+    ],
+    "confidence": "medium",
+    "warning": "请确认食物和份量。"
+  },
+  "requestId": "contract-fixture"
+}

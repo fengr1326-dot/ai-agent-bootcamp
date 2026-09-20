@@ -1,0 +1,18 @@
+{
+  "data": {
+    "direction": "feelGood",
+    "focus": "吃得均衡",
+    "age": 28,
+    "heightCm": 170,
+    "weightKg": 65,
+    "sex": "unspecified",
+    "activity": "moderate",
+    "timezone": "Asia/Shanghai",
+    "allergies": [],
+    "excludedFoods": [],
+    "risks": [],
+    "constraintsConfirmed": true,
+    "modelImprovementConsent": false
+  },
+  "requestId": "contract-fixture"
+}

@@ -1,0 +1,68 @@
+# Local integration only. All published ports bind to loopback. Not a production deployment.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: mealrhythm
+      POSTGRES_USER: mealrhythm
+      POSTGRES_PASSWORD: local-development-only
+    ports: ['127.0.0.1:5432:5432']
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mealrhythm -d mealrhythm']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    ports: ['127.0.0.1:6379:6379']
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    build: {context: .., dockerfile: infra/Dockerfile}
+    environment:
+      DATABASE_URL: postgresql://mealrhythm:local-development-only@postgres:5432/mealrhythm
+    command: ['./node_modules/.bin/prisma', 'migrate', 'deploy']
+    depends_on:
+      postgres: {condition: service_healthy}
+  api:
+    build: {context: .., dockerfile: infra/Dockerfile}
+    ports: ['127.0.0.1:3000:3000']
+    environment: &app-env
+      NODE_ENV: development
+      ALLOW_GUEST: 'true'
+      AUTH_SECRET: ${AUTH_SECRET:?Set a random AUTH_SECRET with at least 32 characters}
+      DATABASE_URL: postgresql://mealrhythm:local-development-only@postgres:5432/mealrhythm
+      REDIS_URL: redis://redis:6379
+      VISION_API_URL: ${VISION_API_URL:-}
+      VISION_API_KEY: ${VISION_API_KEY:-}
+      VISION_MODEL: ${VISION_MODEL:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  worker:
+    build: {context: .., dockerfile: infra/Dockerfile}
+    environment: *app-env
+    command: ['node', 'dist/apps/worker/src/main.js']
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+volumes:
+  postgres-data:
+  redis-data:

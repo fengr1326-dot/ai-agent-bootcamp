@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+.data/
+.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+*.log
+*.xcresult/
+apps/ios/MealRhythm.xcodeproj/
+apps/ios/MealRhythm.entitlements

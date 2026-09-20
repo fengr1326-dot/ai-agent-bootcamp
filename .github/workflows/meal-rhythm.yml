@@ -1,0 +1,65 @@
+name: Meal Rhythm verification
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+defaults:
+  run:
+    working-directory: meal-rhythm
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: mealrhythm_test
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U test -d mealrhythm_test" --health-interval 3s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/mealrhythm_test
+      TEST_DATABASE_URL: postgresql://test:test@localhost:5432/mealrhythm_test
+      TEST_REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24, cache: npm, cache-dependency-path: meal-rhythm/package-lock.json}
+      - run: npm ci
+      - run: npm audit --audit-level=moderate
+      - run: npm run db:generate
+      - run: npx prisma migrate deploy
+      - run: npm run verify
+      - run: npm run contracts && git diff --exit-code -- packages/contracts/generated apps/ios/Sources/Generated apps/ios/Tests/Fixtures
+      - run: docker build -f infra/Dockerfile -t mealrhythm:test .
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24, cache: npm, cache-dependency-path: meal-rhythm/package-lock.json}
+      - run: npm ci && npm run build
+      - run: brew install xcodegen
+      - name: Generate Xcode project
+        run: cd apps/ios && xcodegen generate
+      - name: Run simulator tests against local API
+        env:
+          ALLOW_GUEST: 'true'
+          AUTH_SECRET: simulator-ci-only-secret-at-least-32-characters
+        run: |
+          npm start > "$RUNNER_TEMP/mealrhythm-api.log" 2>&1 &
+          API_PID=$!
+          trap 'kill "$API_PID"' EXIT
+          for attempt in {1..30}; do curl --fail http://localhost:3000/v1/health && break || sleep 1; done
+          DEVICE_ID=$(xcrun simctl list devices available -j | node -e 'let data="";process.stdin.on("data",c=>data+=c);process.stdin.on("end",()=>{const d=Object.values(JSON.parse(data).devices).flat().find(d=>d.name.startsWith("iPhone"));if(!d)process.exit(1);console.log(d.udid)})')
+          xcodebuild test -project apps/ios/MealRhythm.xcodeproj -scheme MealRhythm -destination "platform=iOS Simulator,id=$DEVICE_ID" -parallel-testing-enabled NO -resultBundlePath "$RUNNER_TEMP/MealRhythm.xcresult" CODE_SIGNING_ALLOWED=NO
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-test-results
+          path: ${{ runner.temp }}/MealRhythm.xcresult

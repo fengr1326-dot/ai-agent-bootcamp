@@ -1,0 +1,43 @@
+{
+  "data": {
+    "title": "午餐",
+    "eatenAt": "2026-09-17T04:00:00.000Z",
+    "status": "eaten",
+    "portion": "normal",
+    "items": [
+      {
+        "foodId": "rice",
+        "grams": 150
+      },
+      {
+        "foodId": "chicken",
+        "grams": 100
+      }
+    ],
+    "confidence": "medium",
+    "id": "00000000-0000-4000-8000-000000000001",
+    "nutrition": {
+      "energy": {
+        "min": 270,
+        "max": 450
+      },
+      "protein": {
+        "min": 26.3,
+        "max": 43.8
+      },
+      "fiber": {
+        "min": 0.5,
+        "max": 0.8
+      },
+      "water": {
+        "min": 125.3,
+        "max": 208.8
+      }
+    },
+    "revision": 1,
+    "createdAt": "2026-09-17T06:00:00.000Z",
+    "updatedAt": "2026-09-17T06:00:00.000Z",
+    "sourceVersion": "demo-foods-2026-09-v1"
+  },
+  "requestId": "contract-fixture"
+}

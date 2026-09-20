@@ -1,0 +1,60 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
+import { createApp } from '../apps/api/src/app';
+import { LocalRepository } from '../apps/api/src/repository';
+const now='2026-09-17T07:00:00.000Z';
+const profile={direction:'feelGood',age:28,heightCm:170,weightKg:65,sex:'unspecified',activity:'moderate',timezone:'Asia/Shanghai',constraintsConfirmed:true};
+const meal={title:'鸡肉饭',eatenAt:'2026-09-17T04:00:00.000Z',status:'planned',portion:'normal',items:[{foodId:'chicken',grams:120},{foodId:'rice',grams:150}],confidence:'medium'};
+describe('真实路由和状态闭环',()=>{
+  let server:Awaited<ReturnType<typeof createApp>>,token:string,user:string,refresh:string;
+  const call=async(method:string,url:string,body?:object,key:string=randomUUID(),auth?:string)=>server.fastify.inject({method:method as any,url,headers:{authorization:`Bearer ${auth??token}`,'idempotency-key':key},...(body!==undefined?{payload:body}:{})});
+  beforeEach(async()=>{server=await createApp({repo:new LocalRepository(),secret:'test-secret-only-never-use-in-production-123',guestEnabled:true,clock:()=>now});const session=(await server.fastify.inject({method:'POST',url:'/v1/auth/guest',payload:{}})).json().data;token=session.accessToken;user=session.userId;refresh=session.refreshToken;await call('PATCH','/v1/profile',profile);});
+  afterEach(async()=>{await server.app.close();await server.repo.close();});
+  it('计划餐确认后才更新摄入并移动下一餐窗口',async()=>{
+    const created=(await call('POST','/v1/meals',meal)).json().data;
+    let day=(await call('GET','/v1/days/2026-09-17')).json().data;expect(day.nutrition.mealCount).toBe(0);
+    expect((await call('PATCH',`/v1/meals/${created.id}`,{...meal,status:'eaten',revision:1})).statusCode).toBe(200);
+    day=(await call('GET','/v1/days/2026-09-17')).json().data;
+    expect(day.nutrition.mealCount).toBe(1);expect(day.nutrition.consumed.protein.min).toBeGreaterThan(0);expect(day.window.start).toBe('2026-09-17T08:00:00.000Z');expect(day.recommendations).toHaveLength(3);
+  });
+  it('并发重复提交只有一条餐次',async()=>{const key=randomUUID();const responses=await Promise.all(Array.from({length:8},()=>call('POST','/v1/meals',meal,key)));expect(new Set(responses.map(r=>r.json().data.id)).size).toBe(1);expect((await call('GET','/v1/meals')).json().data.items).toHaveLength(1);});
+  it('同一幂等键不同内容拒绝',async()=>{const key=randomUUID();await call('POST','/v1/meals',meal,key);expect((await call('POST','/v1/meals',{...meal,title:'另一个'},key)).statusCode).toBe(409);});
+  it('无幂等键拒绝写入',async()=>expect((await server.fastify.inject({method:'POST',url:'/v1/meals',headers:{authorization:`Bearer ${token}`},payload:meal})).statusCode).toBe(400));
+  it('旧版本不能覆盖最新修正',async()=>{const m=(await call('POST','/v1/meals',meal)).json().data;await call('PATCH',`/v1/meals/${m.id}`,{...meal,revision:1});expect((await call('PATCH',`/v1/meals/${m.id}`,{...meal,revision:1})).statusCode).toBe(409);});
+  it('用户间餐次严格隔离',async()=>{const m=(await call('POST','/v1/meals',meal)).json().data;const other=await server.auth.guest();expect((await call('GET',`/v1/meals/${m.id}`,undefined,randomUUID(),other.accessToken)).statusCode).toBe(404);});
+  it('没有登录不能读取数据',async()=>expect((await server.fastify.inject({method:'GET',url:'/v1/profile'})).statusCode).toBe(401));
+  it('未知食物不保存',async()=>{expect((await call('POST','/v1/meals',{...meal,items:[{foodId:'mystery',grams:100}]})).statusCode).toBe(400);expect((await call('GET','/v1/meals')).json().data.items).toHaveLength(0);});
+  it('验证拒绝额外字段和异常份量',async()=>{expect((await call('POST','/v1/meals',{...meal,admin:true})).statusCode).toBe(400);expect((await call('POST','/v1/meals',{...meal,items:[{foodId:'rice',grams:-1}]})).statusCode).toBe(400);});
+  it('未来时间不能标为已吃',async()=>expect((await call('POST','/v1/meals',{...meal,status:'eaten',eatenAt:'2026-09-18T04:00:00Z'})).statusCode).toBe(400));
+  it('删除餐次回退摄入',async()=>{const m=(await call('POST','/v1/meals',{...meal,status:'eaten'})).json().data;await call('DELETE',`/v1/meals/${m.id}`);expect((await call('GET','/v1/days/today')).json().data.nutrition.mealCount).toBe(0);});
+  it('未成年人无个性化营养目标',async()=>{await call('PATCH','/v1/profile',{...profile,age:16});const day=(await call('GET','/v1/days/today')).json().data;expect(day.safety.blocked).toBe(true);expect(day.nutrition.targets).toBeNull();expect(day.recommendations).toEqual([]);});
+  it('吃前分析不改变记录',async()=>{expect((await call('POST','/v1/pre-meal',meal)).json().data.canRecommend).toBe(true);expect((await call('GET','/v1/meals')).json().data.items).toHaveLength(0);});
+  it('刷新令牌只能用一次',async()=>{const first=await server.fastify.inject({method:'POST',url:'/v1/auth/refresh',payload:{refreshToken:refresh}});expect(first.statusCode).toBe(200);expect((await server.fastify.inject({method:'POST',url:'/v1/auth/refresh',payload:{refreshToken:refresh}})).statusCode).toBe(401);});
+  it('导出不包含令牌、推送标识和幂等缓存',async()=>{const result=(await call('POST','/v1/data-exports',{})).json().data;expect(result.profile.direction).toBe('feelGood');expect(result.refreshHashes).toBeUndefined();expect(result.idempotency).toBeUndefined();});
+  it('删除账户撤销所有会话',async()=>{expect((await call('DELETE','/v1/account')).statusCode).toBe(200);expect(await server.repo.read(user)).toBeNull();expect((await call('GET','/v1/profile')).statusCode).toBe(401);});
+  it('推迟窗口会取消旧通知且关闭后无通知',async()=>{
+    await call('POST','/v1/meals',{...meal,status:'eaten'});
+    await call('PATCH','/v1/notification-preferences',{enabled:true,quietStart:22,quietEnd:8,ignoredCount:0});
+    const old=(await call('GET','/v1/notifications')).json().data;expect(old).toHaveLength(1);
+    const context=(await call('GET','/v1/days/today')).json().data.context;
+    await call('PUT','/v1/days/2026-09-17/context',{...context,snoozedUntil:'2026-09-17T09:00:00Z'});
+    const next=(await call('GET','/v1/notifications')).json().data;expect(next).toHaveLength(1);expect(next[0].id).not.toBe(old[0].id);
+    await call('PATCH','/v1/notification-preferences',{enabled:false,quietStart:22,quietEnd:8,ignoredCount:0});expect((await call('GET','/v1/notifications')).json().data).toHaveLength(0);
+  });
+  it('契约为 OpenAPI 3.1，写接口声明幂等头',async()=>{const spec=(await server.fastify.inject({method:'GET',url:'/v1/openapi.json'})).json();expect(spec.openapi).toBe('3.1.0');expect(spec.paths['/v1/meals'].post.parameters.some((p:any)=>p.name==='Idempotency-Key')).toBe(true);});
+  it('错误含 requestId 且不会泄漏内部异常',async()=>{const response=await call('GET','/v1/days/invalid');expect(response.json().requestId).toBeTruthy();expect(response.statusCode).toBe(400);});
+  it('框架层的非法 JSON 也使用统一错误结构',async()=>{const response=await server.fastify.inject({method:'POST',url:'/v1/meals',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},payload:'{invalid'});expect(response.statusCode).toBe(400);expect(response.json().code).toBe('INVALID_REQUEST');expect(response.json().requestId).toBeTruthy();});
+  it('当天已有三条到期提醒时，不再创建第四条',async()=>{
+    await server.repo.transact(user,s=>{s.notificationPreferences.enabled=true;for(let i=0;i<3;i++)s.notifications.push({id:`past-${i}`,at:`2026-09-17T0${i+1}:00:00Z`,title:'提醒',body:'',status:'scheduled',attempts:0});});
+    await call('POST','/v1/meals',{...meal,status:'eaten'});
+    expect((await call('GET','/v1/notifications')).json().data).toHaveLength(0);
+    expect((await server.repo.read(user))!.notifications.filter(n=>n.status==='sent')).toHaveLength(3);
+  });
+  it('连续忽略三次后停止提醒，过期取消通知的响应无副作用',async()=>{
+    await server.repo.transact(user,s=>{s.notificationPreferences.enabled=true;for(let i=0;i<3;i++)s.notifications.push({id:`ignore-${i}`,at:now,title:'提醒',body:'',status:'sent',attempts:0});s.notifications.push({id:'cancelled',at:now,title:'',body:'',status:'cancelled',attempts:0});});
+    for(let i=0;i<3;i++)await call('POST',`/v1/notifications/ignore-${i}/respond`,{action:'ignored'});
+    await call('POST','/v1/notifications/cancelled/respond',{action:'opened'});
+    expect((await server.repo.read(user))!.notificationPreferences.ignoredCount).toBe(3);
+    expect((await call('GET','/v1/notifications')).json().data).toHaveLength(0);
+  });
+});
