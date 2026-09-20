@@ -57,7 +57,7 @@ jobs:
           trap 'kill "$API_PID"' EXIT
           for attempt in {1..30}; do curl --fail http://localhost:3000/v1/health && break || sleep 1; done
           DEVICE_ID=$(xcrun simctl list devices available -j | node -e 'let data="";process.stdin.on("data",c=>data+=c);process.stdin.on("end",()=>{const d=Object.values(JSON.parse(data).devices).flat().find(d=>d.name.startsWith("iPhone"));if(!d)process.exit(1);console.log(d.udid)})')
-          xcodebuild test -project apps/ios/MealRhythm.xcodeproj -scheme MealRhythm -destination "platform=iOS Simulator,id=$DEVICE_ID" -parallel-testing-enabled NO -resultBundlePath "$RUNNER_TEMP/MealRhythm.xcresult" CODE_SIGNING_ALLOWED=NO
+          xcodebuild test -project apps/ios/MealRhythm.xcodeproj -scheme MealRhythm -destination "platform=iOS Simulator,id=$DEVICE_ID" -parallel-testing-enabled NO -resultBundlePath "$RUNNER_TEMP/MealRhythm.xcresult" CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -8,6 +8,15 @@ struct OnboardingView: View {
     @State private var sleep=Calendar.current.date(bySettingHour:23,minute:0,second:0,of:Date())!
     @State private var busy=false
     private let titles=["你想往哪个方向？","从一件小事开始。","更了解你一点。","平时有多活跃？","今天，按你的节奏。"]
+    init() {
+        #if DEBUG && targetEnvironment(simulator)
+        // UI automation supplies a valid waking interval around its actual run time.
+        // The screen and API still perform the normal onboarding flow.
+        let env=ProcessInfo.processInfo.environment
+        if let value=env["MEALRHYTHM_UI_TEST_WAKE"],let seconds=Double(value) {_wake=State(initialValue:Date(timeIntervalSince1970:seconds))}
+        if let value=env["MEALRHYTHM_UI_TEST_SLEEP"],let seconds=Double(value) {_sleep=State(initialValue:Date(timeIntervalSince1970:seconds))}
+        #endif
+    }
     var body:some View {
         ZStack {
             Palette.background.ignoresSafeArea()
